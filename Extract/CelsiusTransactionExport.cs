@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using Common.Controllers;
 using Common.Models.Celsius;
@@ -9,8 +10,8 @@ namespace Extract
     public class CelsiusTransactionExport
     {
         private static GoogleSheet _sheet;
-        private const string spreadSheet = "";
-        private const string apiKey = "";
+        private static readonly string spreadSheet = ConfigurationManager.AppSettings["SpreadSheetId"];
+        private static readonly string apiKey = ConfigurationManager.AppSettings["CelsiusApiKey"];
         private static CryptoData cryptoData;
         public static void Run()
         {

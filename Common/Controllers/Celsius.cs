@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Reflection;
 using Common.Models.Celsius;
 using log4net;
@@ -11,7 +12,7 @@ namespace Common.Controllers
     {
         private readonly string _apiKey;
         private readonly RestClient _client = new RestClient("https://wallet-api.celsius.network");
-        private const string PartnerToken = "";
+        private static readonly string PartnerToken = ConfigurationManager.AppSettings["PartnerToken"];
         private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         public Celsius(string apiKey)

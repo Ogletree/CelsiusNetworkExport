@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Reflection;
 using Common.Models.CoinMarketCap;
 using log4net;
@@ -10,7 +11,7 @@ namespace Common.Controllers
     public class CoinMarketCap
     {
         private readonly RestClient _client = new RestClient("https://pro-api.coinmarketcap.com");
-        private const string Apikey = "";
+        private static readonly string Apikey = ConfigurationManager.AppSettings["CoinMarketCapApi"];
         private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         public CryptoData GetAccounts()
