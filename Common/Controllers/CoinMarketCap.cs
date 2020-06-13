@@ -10,14 +10,19 @@ namespace Common.Controllers
 {
     public class CoinMarketCap
     {
+        private readonly string _apiKey;
         private readonly RestClient _client = new RestClient("https://pro-api.coinmarketcap.com");
-        private static readonly string Apikey = ConfigurationManager.AppSettings["CoinMarketCapApi"];
         private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        public CoinMarketCap(string apiKey)
+        {
+            _apiKey = apiKey;
+        }
 
         public CryptoData GetAccounts()
         {
             var request = new RestRequest("/v1/cryptocurrency/quotes/latest", Method.GET);
-            request.AddHeader("X-CMC_PRO_API_KEY", Apikey);
+            request.AddHeader("X-CMC_PRO_API_KEY", _apiKey);
             request.AddHeader("Accepts", "application/json");
             request.AddParameter("symbol", "ETH,BTC,DASH,BCH,LTC,ZEC,BTG,XRP,XLM,OMG,TUSD,GUSD,PAX,USDC,DAI,CEL,ZRX,ORBS,USDT,EOS"); //TODO: This shouldn't be hardcoded
             request.AddParameter("convert", "CAD");

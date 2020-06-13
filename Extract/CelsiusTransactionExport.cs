@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using Common.Controllers;
@@ -9,33 +10,53 @@ namespace Extract
 {
     public class CelsiusTransactionExport
     {
+        private static readonly string CelApiKey = ConfigurationManager.AppSettings["CelsiusApiKey"];
+        private static readonly string CelPartnerToken = ConfigurationManager.AppSettings["PartnerToken"];
+        private static readonly string CmcApikey = ConfigurationManager.AppSettings["CoinMarketCapApi"];
+        private static readonly string SpreadSheetId = ConfigurationManager.AppSettings["SpreadSheetId"];
+
         private static GoogleSheet _sheet;
-        private static readonly string spreadSheet = ConfigurationManager.AppSettings["SpreadSheetId"];
-        private static readonly string apiKey = ConfigurationManager.AppSettings["CelsiusApiKey"];
-        private static CryptoData cryptoData;
+        private static CryptoData _cryptoData;
         public static void Run()
         {
-            var coinMarketCap = new CoinMarketCap();
-            cryptoData = coinMarketCap.GetAccounts();
+            var coinMarketCap = new CoinMarketCap(CmcApikey);
+            _cryptoData = coinMarketCap.GetAccounts();
 
-            var celsius = new Celsius(apiKey);
+            var celsius = new Celsius(CelApiKey, CelPartnerToken);
             var balance = celsius.GetBalance();
             var transactions = celsius.GetTransactions();
-            DoIt(spreadSheet, balance);
-            DoEeeet(spreadSheet, transactions);
-        }
 
-        private static void DoEeeet(string sheetId, Transactions transactions)
+            _sheet = new GoogleSheet(SpreadSheetId);
+
+            ProcessBalance(balance);
+            ProcessTransactions(transactions);
+        }
+        private static void ProcessBalance(CelsiusBalance balance)
         {
-            _sheet = new GoogleSheet(sheetId);
-            IList<IList<object>> stuff = new List<IList<object>>();
+            IList<IList<object>> rows = new List<IList<object>>();
+            foreach (var balances in balance.GetBalances())
+            {
+                IList<object> columns = new List<object>();
+                columns.Add(balances.symbol);
+
+                var datum = _cryptoData.Data[balances.symbol.ToUpper()];
+                columns.Add(datum.Quote.Cad.Price);
+                columns.Add(datum.Quote.Cad.PercentChange24H);
+                columns.Add(datum.Name);
+                rows.Add(columns);
+            }
+            _sheet.WriteStuff(rows, "Summary!A3");
+        }
+        private static void ProcessTransactions(Transactions transactions)
+        {
+            IList<IList<object>> rows = new List<IList<object>>();
             foreach (var record in transactions.record.OrderBy(x => x.time))
             {
-                IList<object> stuffs = new List<object>();
+                IList<object> columns = new List<object>();
                 if (record.amount == "0.000000000000000000")
                     continue;
-                stuffs.Add(record.time);
-                var type = "";
+                columns.Add(record.time);
+                string type;
                 switch (record.nature)
                 {
                     case "deposit":
@@ -59,42 +80,33 @@ namespace Extract
                     case "inbound_transfer":
                         type = "Buy";
                         break;
+                    default:
+                        throw new NotImplementedException($"New record nature: {record.nature}");
                 }
-                stuffs.Add(type);
-                var datum = cryptoData.Data[record.coin];
-                stuffs.Add(datum.Name);
-                stuffs.Add(record.amount.Replace("-", ""));
-                if (record.nature == "bonus_token")
-                    stuffs.Add("Bonus Token");
-                if (record.nature == "outbound_transfer")
-                    stuffs.Add("Outbound Transfer");
-                if (record.nature == "referrer_award")
-                    stuffs.Add("Referrer Award");
-                if (record.nature == "inbound_transfer")
-                    stuffs.Add("Inbound Transfer");
-                stuff.Add(stuffs);
+                columns.Add(type);
+                var datum = _cryptoData.Data[record.coin];
+                columns.Add(datum.Name);
+                columns.Add(record.amount.Replace("-", ""));
+                switch (record.nature)
+                {
+                    case "bonus_token":
+                        columns.Add("Bonus Token");
+                        break;
+                    case "outbound_transfer":
+                        columns.Add("Outbound Transfer");
+                        break;
+                    case "referrer_award":
+                        columns.Add("Referrer Award");
+                        break;
+                    case "inbound_transfer":
+                        columns.Add("Inbound Transfer");
+                        break;
+                    default:
+                        throw new NotImplementedException($"New record nature: {record.nature}");
+                }
+                rows.Add(columns);
             }
-            _sheet.WriteStuff(stuff, "Transactions!A2");
-
-        }
-
-        private static void DoIt(string sheetId, CelsiusBalance balance)
-        {
-
-            _sheet = new GoogleSheet(sheetId);
-            IList<IList<object>> stuff = new List<IList<object>>();
-            foreach (var balances in balance.GetBalances())
-            {
-                IList<object> stuffs = new List<object>();
-                stuffs.Add(balances.symbol);
-
-                var datum = cryptoData.Data[balances.symbol.ToUpper()];
-                stuffs.Add(datum.Quote.Cad.Price);
-                stuffs.Add(datum.Quote.Cad.PercentChange24H);
-                stuffs.Add(datum.Name);
-                stuff.Add(stuffs);
-            }
-            _sheet.WriteStuff(stuff, "Summary!A3");
+            _sheet.WriteStuff(rows, "Transactions!A2");
         }
     }
 }

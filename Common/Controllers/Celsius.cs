@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Configuration;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Common.Models.Celsius;
 using log4net;
 using Newtonsoft.Json;
@@ -11,19 +11,20 @@ namespace Common.Controllers
     public class Celsius
     {
         private readonly string _apiKey;
+        private readonly string _partnerToken;
         private readonly RestClient _client = new RestClient("https://wallet-api.celsius.network");
-        private static readonly string PartnerToken = ConfigurationManager.AppSettings["PartnerToken"];
         private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        public Celsius(string apiKey)
+        public Celsius(string apiKey, string partnerToken)
         {
             _apiKey = apiKey;
+            _partnerToken = partnerToken;
         }
 
         public CelsiusBalance GetBalance()
         {
             var request = new RestRequest("/wallet/balance", Method.GET);
-            request.AddHeader("X-Cel-Partner-Token", PartnerToken);
+            request.AddHeader("X-Cel-Partner-Token", _partnerToken);
             request.AddHeader("X-Cel-Api-Key", _apiKey);
             var restResponse = _client.Execute(request);
             try
@@ -35,13 +36,13 @@ namespace Common.Controllers
             {
                 Log.Debug("Celsius Response:");
                 Log.Debug(restResponse.Content);
-                return null;
+                throw new InvalidDataContractException("Unexpected content in CelsiusBalance response content.");
             }
         }
         public Transactions GetTransactions()
         {
             var request = new RestRequest("/wallet/transactions?page=1&per_page=100000", Method.GET);
-            request.AddHeader("X-Cel-Partner-Token", PartnerToken);
+            request.AddHeader("X-Cel-Partner-Token", _partnerToken);
             request.AddHeader("X-Cel-Api-Key", _apiKey);
             var restResponse = _client.Execute(request);
             try
@@ -53,7 +54,7 @@ namespace Common.Controllers
             {
                 Log.Debug("Celsius Response:");
                 Log.Debug(restResponse.Content);
-                return null;
+                throw new InvalidDataContractException("Unexpected content in CelsiusTransactions response content.");
             }
         }
     }
