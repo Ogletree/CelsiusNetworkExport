@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CoinpaprikaAPI" Version="1.2.8" />
     <PackageReference Include="Google.Apis.Sheets.v4" Version="1.45.0.1965" />
     <PackageReference Include="log4net" Version="2.0.8" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
