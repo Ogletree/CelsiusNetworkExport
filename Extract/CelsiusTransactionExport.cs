@@ -4,7 +4,6 @@ using System.Configuration;
 using System.Linq;
 using Common.Controllers;
 using Common.Models.Celsius;
-using Common.Models.CoinMarketCap;
 
 namespace Extract
 {
@@ -14,13 +13,14 @@ namespace Extract
         private static readonly string CelPartnerToken = ConfigurationManager.AppSettings["PartnerToken"];
         private static readonly string CmcApikey = ConfigurationManager.AppSettings["CoinMarketCapApi"];
         private static readonly string SpreadSheetId = ConfigurationManager.AppSettings["SpreadSheetId"];
+        private static readonly string QuoteCurrency = ConfigurationManager.AppSettings["QuoteCurrency"];
 
         private static GoogleSheet _sheet;
-        private static CryptoData _cryptoData;
+        private static dynamic _quoteData;
         public static void Run()
         {
             var coinMarketCap = new CoinMarketCap(CmcApikey);
-            _cryptoData = coinMarketCap.GetAccounts();
+            _quoteData = coinMarketCap.GetQuotes();
 
             var celsius = new Celsius(CelApiKey, CelPartnerToken);
             var balance = celsius.GetBalance();
@@ -39,10 +39,10 @@ namespace Extract
                 IList<object> columns = new List<object>();
                 columns.Add(balances.symbol);
 
-                var datum = _cryptoData.Data[balances.symbol.ToUpper()];
-                columns.Add(datum.Quote.Cad.Price);
-                columns.Add(datum.Quote.Cad.PercentChange24H);
-                columns.Add(datum.Name);
+                var symbol = _quoteData.data[balances.symbol.ToUpper()];
+                columns.Add(symbol.quote[QuoteCurrency].price);
+                columns.Add(symbol.quote[QuoteCurrency].percent_change_24h);
+                columns.Add(symbol.Name);
                 rows.Add(columns);
             }
             _sheet.WriteStuff(rows, "Summary!A3");
@@ -84,7 +84,7 @@ namespace Extract
                         throw new NotImplementedException($"New record nature: {record.nature}");
                 }
                 columns.Add(type);
-                var datum = _cryptoData.Data[record.coin];
+                var datum = _quoteData.data[record.coin];
                 columns.Add(datum.Name);
                 columns.Add(record.amount.Replace("-", ""));
                 switch (record.nature)
@@ -101,8 +101,6 @@ namespace Extract
                     case "inbound_transfer":
                         columns.Add("Inbound Transfer");
                         break;
-                    default:
-                        throw new NotImplementedException($"New record nature: {record.nature}");
                 }
                 rows.Add(columns);
             }
