@@ -34,7 +34,7 @@ namespace Extract
         private static void ProcessBalance(CelsiusBalance balance)
         {
             IList<IList<object>> rows = new List<IList<object>>();
-            foreach (var balances in balance.GetBalances())
+            foreach (var balances in balance.GetBalances().OrderByDescending(x=> x.amount).ThenBy(x=>x.symbol))
             {
                 IList<object> columns = new List<object>();
                 columns.Add(balances.symbol);
@@ -42,7 +42,7 @@ namespace Extract
                 var symbol = _quoteData.data[balances.symbol.ToUpper()];
                 columns.Add(symbol.quote[QuoteCurrency].price);
                 columns.Add(symbol.quote[QuoteCurrency].percent_change_24h);
-                columns.Add(symbol.Name);
+                columns.Add(symbol.name);
                 rows.Add(columns);
             }
             _sheet.WriteStuff(rows, "Summary!A3");
@@ -54,6 +54,8 @@ namespace Extract
             {
                 IList<object> columns = new List<object>();
                 if (record.amount == "0.000000000000000000")
+                    continue;
+                if (record.state != "confirmed")
                     continue;
                 columns.Add(record.time);
                 string type;
@@ -85,7 +87,7 @@ namespace Extract
                 }
                 columns.Add(type);
                 var datum = _quoteData.data[record.coin];
-                columns.Add(datum.Name);
+                columns.Add(datum.name);
                 columns.Add(record.amount.Replace("-", ""));
                 switch (record.nature)
                 {
