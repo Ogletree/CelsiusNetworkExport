@@ -29,7 +29,7 @@ namespace Extract
         private static void ProcessBalance(CelsiusBalance balance)
         {
             IList<IList<object>> rows = new List<IList<object>>();
-            foreach (var balances in balance.GetBalances())
+            foreach (var balances in balance.GetBalances().OrderByDescending(x=>x.amount).ThenBy(x=>x.symbol))
             {
                 IList<object> columns = new List<object>();
                 columns.Add(balances.symbol);
@@ -47,6 +47,8 @@ namespace Extract
             {
                 IList<object> columns = new List<object>();
                 if (record.amount == "0.000000000000000000")
+                    continue;
+                if(record.state != "confirmed")
                     continue;
                 columns.Add(record.time);
                 string type;
