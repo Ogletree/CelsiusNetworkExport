@@ -11,22 +11,17 @@ namespace Extract
     {
         private static readonly string CelApiKey = ConfigurationManager.AppSettings["CelsiusApiKey"];
         private static readonly string CelPartnerToken = ConfigurationManager.AppSettings["PartnerToken"];
-        private static readonly string CmcApikey = ConfigurationManager.AppSettings["CoinMarketCapApi"];
         private static readonly string SpreadSheetId = ConfigurationManager.AppSettings["SpreadSheetId"];
-        private static readonly string QuoteCurrency = ConfigurationManager.AppSettings["QuoteCurrency"];
-
+        private static IExchangeData _exchangeData;
         private static GoogleSheet _sheet;
-        private static dynamic _quoteData;
         public static void Run()
         {
-            var coinMarketCap = new CoinMarketCap(CmcApikey);
-            _quoteData = coinMarketCap.GetQuotes();
+            _exchangeData = new ExchangeDataCoinPaprika();
+            _sheet = new GoogleSheet(SpreadSheetId);
 
             var celsius = new Celsius(CelApiKey, CelPartnerToken);
             var balance = celsius.GetBalance();
             var transactions = celsius.GetTransactions();
-
-            _sheet = new GoogleSheet(SpreadSheetId);
 
             ProcessBalance(balance);
             ProcessTransactions(transactions);
@@ -34,15 +29,13 @@ namespace Extract
         private static void ProcessBalance(CelsiusBalance balance)
         {
             IList<IList<object>> rows = new List<IList<object>>();
-            foreach (var balances in balance.GetBalances().OrderByDescending(x=> x.amount).ThenBy(x=>x.symbol))
+            foreach (var balances in balance.GetBalances())
             {
                 IList<object> columns = new List<object>();
                 columns.Add(balances.symbol);
-
-                var symbol = _quoteData.data[balances.symbol.ToUpper()];
-                columns.Add(symbol.quote[QuoteCurrency].price);
-                columns.Add(symbol.quote[QuoteCurrency].percent_change_24h);
-                columns.Add(symbol.name);
+                columns.Add(_exchangeData.GetPrice(balances.symbol));
+                columns.Add(_exchangeData.GetPercentChange24Hour(balances.symbol));
+                columns.Add(_exchangeData.GetName(balances.symbol));
                 rows.Add(columns);
             }
             _sheet.WriteStuff(rows, "Summary!A3");
@@ -54,8 +47,6 @@ namespace Extract
             {
                 IList<object> columns = new List<object>();
                 if (record.amount == "0.000000000000000000")
-                    continue;
-                if (record.state != "confirmed")
                     continue;
                 columns.Add(record.time);
                 string type;
@@ -86,8 +77,7 @@ namespace Extract
                         throw new NotImplementedException($"New record nature: {record.nature}");
                 }
                 columns.Add(type);
-                var datum = _quoteData.data[record.coin];
-                columns.Add(datum.name);
+                columns.Add(_exchangeData.GetName(record.coin));
                 columns.Add(record.amount.Replace("-", ""));
                 switch (record.nature)
                 {
