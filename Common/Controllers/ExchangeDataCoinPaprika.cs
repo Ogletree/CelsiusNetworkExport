@@ -21,19 +21,19 @@ namespace Common.Controllers
         public string GetName(string symbol)
         {
             var quotesInfo = _quoteData.Value.FirstOrDefault(x => x.Symbol == symbol.ToUpper());
-            return quotesInfo.Name;
+            return quotesInfo?.Name ?? symbol;
         }
 
         public decimal GetPrice(string symbol)
         {
             var quotesInfo = _quoteData.Value.FirstOrDefault(x => x.Symbol == symbol.ToUpper());
-            return quotesInfo.Quotes[QuoteCurrency].Price;
+            return quotesInfo?.Quotes[QuoteCurrency].Price ?? 0m;
         }
 
         public decimal GetPercentChange24Hour(string symbol)
         {
             var quotesInfo = _quoteData.Value.FirstOrDefault(x => x.Symbol == symbol.ToUpper());
-            return quotesInfo.Quotes[QuoteCurrency].PercentChange24H;
+            return quotesInfo?.Quotes[QuoteCurrency].PercentChange24H ?? 0m;
         }
     }
 }

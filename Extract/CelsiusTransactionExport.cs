@@ -29,13 +29,13 @@ namespace Extract
         private static void ProcessBalance(CelsiusBalance balance)
         {
             IList<IList<object>> rows = new List<IList<object>>();
-            foreach (var balances in balance.GetBalances().OrderByDescending(x=>x.amount).ThenBy(x=>x.symbol))
+            foreach (var balances in balance.GetBalances().OrderByDescending(x=>x.Amount).ThenBy(x=>x.Symbol))
             {
                 IList<object> columns = new List<object>();
-                columns.Add(balances.symbol);
-                columns.Add(_exchangeData.GetPrice(balances.symbol));
-                columns.Add(_exchangeData.GetPercentChange24Hour(balances.symbol));
-                columns.Add(_exchangeData.GetName(balances.symbol));
+                columns.Add(balances.Symbol);
+                columns.Add(_exchangeData.GetPrice(balances.Symbol));
+                columns.Add(_exchangeData.GetPercentChange24Hour(balances.Symbol));
+                columns.Add(_exchangeData.GetName(balances.Symbol));
                 rows.Add(columns);
             }
             _sheet.WriteStuff(rows, "Summary!A3");
