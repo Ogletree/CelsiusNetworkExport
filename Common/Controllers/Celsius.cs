@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
 using Common.Models.Celsius;
@@ -30,6 +31,7 @@ namespace Common.Controllers
             try
             {
                 var crypto = JsonConvert.DeserializeObject<CelsiusBalance>(restResponse.Content);
+                File.WriteAllText("Balance.json", restResponse.Content);
                 return crypto;
             }
             catch (Exception)
@@ -48,6 +50,7 @@ namespace Common.Controllers
             try
             {
                 var crypto = JsonConvert.DeserializeObject<Transactions>(restResponse.Content);
+                File.WriteAllText("Transactions.json", restResponse.Content);
                 return crypto;
             }
             catch (Exception)

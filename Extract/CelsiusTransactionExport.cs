@@ -50,6 +50,11 @@ namespace Extract
                     continue;
                 if(record.state != "confirmed")
                     continue;
+                if (record.nature == "")
+                    continue;
+                if (record.nature == "collateral") continue;
+                if (record.nature == "loan_principal_payment") continue;
+                if (record.nature == "loan_interest_payment") continue;
                 columns.Add(record.time);
                 string type;
                 switch (record.nature)
